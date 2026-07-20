@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study Hub</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --card-bg: #ffffff;
+    --border: #e0e0e0;
+    --text: #1c1c1c;
+    --text-muted: #6b6b6b;
+    --accent: #2f5fdb;
+    --accent-hover: #24469f;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: 40px 20px 80px;
+  }
+
+  header {
+    max-width: 640px;
+    margin: 0 auto 32px;
+    text-align: left;
+  }
+
+  header h1 {
+    font-size: 1.6rem;
+    margin: 0 0 6px;
+  }
+
+  header p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+  }
+
+  main {
+    max-width: 640px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* ============================================
+     LINK BUTTON — copy everything between the
+     START/END comments to add a new link.
+     Just change the href and the text.
+     ============================================ */
+
+  /* START: link-button */
+  .file-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 18px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 500;
+    transition: border-color 0.15s ease, transform 0.1s ease;
+  }
+
+  .file-btn:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  .file-btn:active {
+    transform: translateY(0);
+  }
+
+  .file-btn .arrow {
+    color: var(--accent);
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+  /* END: link-button */
+
+  footer {
+    max-width: 640px;
+    margin: 40px auto 0;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+</style>
+</head>
+<body>
+
+  <header>
+    <h1>Study Hub</h1>
+    <p>Quick links to your study docs — open from any device.</p>
+  </header>
+
+  <main>
+
+    <!-- START: link-button (copy this whole <a> block to add a new link) -->
+    <a class="file-btn" href="https://docs.google.com/spreadsheets/d/1bsjlXAd9IN4_rnEcBz8uEVvwIu0K0Nazzkry-aAnC68/edit?usp=sharing" target="_blank" rel="noopener noreferrer">
+      <span>Time log</span>
+      <span class="arrow">→</span>
+    </a>
+    <!-- END: link-button -->
+
+    <!-- START: link-button -->
+    <a class="file-btn" href="https://docs.google.com/spreadsheets/d/1ML3syWqRnNUc1WbOiQWzSPsSvE8s-aNRAF5YRnyz3Ok/edit?usp=sharing" target="_blank" rel="noopener noreferrer">
+      <span>Error Tracking system</span>
+      <span class="arrow">→</span>
+    </a>
+    <!-- END: link-button -->
+
+    <!-- START: link-button -->
+    <a class="file-btn" href="https://docs.google.com/document/d/1WAkLx0dB2SmfoaRKuPxLn6gz0SkVdCajMEvuzJXay8I/edit?usp=sharing" target="_blank" rel="noopener noreferrer">
+      <span>Speaking Notes</span>
+      <span class="arrow">→</span>
+    </a>
+    <!-- END: link-button -->
+
+    <!-- START: link-button -->
+    <a class="file-btn" href="https://docs.google.com/document/d/1l1jjddjzZrQOkWmdF8CVRXTj4LADspP_vW8H8_zfq8Y/edit?usp=sharing" target="_blank" rel="noopener noreferrer">
+      <span>General Notebook</span>
+      <span class="arrow">→</span>
+    </a>
+    <!-- END: link-button -->
+
+    <!-- START: link-button -->
+    <a class="file-btn" href="https://docs.google.com/document/d/10eiZOYcNis-KoYvYH2RsZ4eMfRhXx_Hc5FQ0R927i9o/edit?tab=t.0#heading=h.3eqblquwgzrr" target="_blank" rel="noopener noreferrer">
+      <span>Expression Ecrire History</span>
+      <span class="arrow">→</span>
+    </a>
+    <!-- END: link-button -->
+
+    <!-- START: link-button -->
+    <a class="file-btn" href="https://docs.google.com/spreadsheets/d/1pZ3wCWgSWKbE2J_ujBySkijs5ByXEJYpXh5XDmjMndw/edit?usp=sharing" target="_blank" rel="noopener noreferrer">
+      <span>Verbs Worksheet</span>
+      <span class="arrow">→</span>
+    </a>
+    <!-- END: link-button -->
+
+  </main>
+
+  <footer>
+    To add a new link: copy one block between <code>&lt;!-- START: link-button --&gt;</code> and <code>&lt;!-- END: link-button --&gt;</code>, paste it above <code>&lt;/main&gt;</code>, then change the <code>href</code> and the label text.
+  </footer>
+
+</body>
+</html>
