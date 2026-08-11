@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cahier de Conjugaison</title>
+<link rel="stylesheet" href="notebook-theme.css">
+<style>
+  /* App-specific styles — layered on top of notebook-theme.css.
+     Anything generic (buttons, switches, chips, the paper card, etc.)
+     already lives in the theme file. */
+
+  .timer-input-row{ display:flex; align-items:center; gap: 10px; margin-top: 14px; }
+  .timer-input-row input[type=number]{
+    width: 70px;
+    font-family: var(--font-mono);
+    font-size: 15px;
+    padding: 8px 10px;
+    border: 1.5px solid var(--ink-soft);
+    border-radius: 4px;
+    background: #fff;
+  }
+  .timer-input-row.hidden{ display:none; }
+
+  .settings-footer{ margin-top: 30px; display:flex; align-items:center; gap: 14px; }
+
+  /* ---------- session ---------- */
+  .session-topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap: 10px;
+    margin-bottom: 26px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--paper-edge);
+  }
+  .stat{ font-family: var(--font-mono); font-size: 13px; color: var(--ink-soft); }
+  .stat strong{ color: var(--ink); font-size: 15px; }
+  .stat.timer-low strong{ color: var(--margin-red); }
+  .stats-cluster{ display:flex; gap:22px; flex-wrap:wrap; }
+
+  /* the tense name — a clear, legible stamped label (not the cursive font) */
+  .tense-banner{ margin: 0 0 18px; }
+
+  /* pronoun/name + infinitive, shown side by side at the same size */
+  .prompt-card{ margin: 0 0 26px; }
+  .prompt-line{
+    display:flex;
+    align-items:baseline;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin: 0;
+  }
+  .prompt-word{
+    font-family: var(--font-display);
+    font-size: 42px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  #prompt-infinitive{ font-style: italic; }
+  .prompt-english{
+    font-size: 14px;
+    font-style: italic;
+    color: var(--ink-soft);
+    margin: 8px 0 0;
+  }
+
+  .answer-row{ display:flex; gap: 12px; align-items:center; flex-wrap:wrap; }
+  #answer-input{
+    flex: 1 1 220px;
+    font-family: var(--font-mono);
+    font-size: 20px;
+    padding: 12px 14px;
+    border: none;
+    border-bottom: 2px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+  }
+  #answer-input:focus{ outline:none; border-bottom-color: var(--gold); }
+  #answer-input.correct{ border-bottom-color: var(--green-ok); color: var(--green-ok); }
+  #answer-input.incorrect{ border-bottom-color: var(--margin-red); color: var(--margin-red); }
+
+  .session-footer{ margin-top: 30px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap: 14px; }
+
+  /* ---------- end screen ---------- */
+  .end-pct{ font-family: var(--font-pen); font-size: 26px; color: var(--margin-red); margin: 0 0 30px; }
+  .end-actions{ display:flex; gap:14px; flex-wrap:wrap; }
+
+  @media (max-width: 560px){
+    .prompt-word{ font-size: 32px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= HOME ================= -->
+<main class="page screen active" id="screen-home">
+  <p class="eyebrow">Cahier de Conjugaison</p>
+  <h1 class="title">Conjugue-moi ça.</h1>
+  <p class="subtitle">Your own French verb notebook. Pick a way to practice — start with graded, timed drills, or wait for multiple choice.</p>
+
+  <div class="stamp-row">
+    <button class="stamp" id="btn-mc" disabled>
+      <span class="badge-soon">Coming Soon</span>
+      <span class="num">01</span>
+      <span class="name">Multiple Choice</span>
+      <span class="desc">Pick the right form out of four. Coming later.</span>
+    </button>
+    <button class="stamp" id="btn-graded">
+      <span class="num">02</span>
+      <span class="name">Graded Practice</span>
+      <span class="desc">Write the conjugation yourself, get scored.</span>
+    </button>
+  </div>
+</main>
+
+<!-- ================= SETTINGS ================= -->
+<main class="page screen" id="screen-settings">
+  <button class="back-link" id="settings-back">&larr; Home</button>
+  <p class="eyebrow">Graded Practice</p>
+  <h1 class="title" style="font-size:34px;">Settings</h1>
+  <p class="subtitle">Set up your drill, then hit start.</p>
+
+  <div class="setting">
+    <div class="setting-head">
+      <div>
+        <p class="setting-label">Show English meaning</p>
+        <p class="setting-hint">Show the English meaning next to each infinitive.</p>
+      </div>
+      <button class="switch" id="toggle-english" role="switch" aria-checked="false"></button>
+    </div>
+  </div>
+
+  <div class="setting">
+    <div class="setting-head">
+      <div>
+        <p class="setting-label">Names instead of pronouns</p>
+        <p class="setting-hint">Swap il / elle / ils / elles for a random French first name.</p>
+      </div>
+      <button class="switch" id="toggle-names" role="switch" aria-checked="false"></button>
+    </div>
+  </div>
+
+  <div class="setting">
+    <p class="setting-label">Pronouns</p>
+    <p class="setting-hint">Which subject pronouns should show up?</p>
+    <div class="chip-grid" id="pronoun-chips"></div>
+    <div class="quick-links">
+      <button type="button" data-pronoun-all="true">Select all</button>
+      <button type="button" data-pronoun-all="false">Select none</button>
+    </div>
+  </div>
+
+  <div class="setting">
+    <p class="setting-label">Tenses</p>
+    <p class="setting-hint">Which tenses should show up?</p>
+    <div class="checkbox-list" id="tense-list"></div>
+    <div class="quick-links">
+      <button type="button" data-tense-all="true">Select all</button>
+      <button type="button" data-tense-all="false">Select none</button>
+    </div>
+  </div>
+
+  <div class="setting">
+    <div class="setting-head">
+      <div>
+        <p class="setting-label">Timer</p>
+        <p class="setting-hint">Give yourself a time limit for the session.</p>
+      </div>
+      <button class="switch" id="toggle-timer" role="switch" aria-checked="false"></button>
+    </div>
+    <div class="timer-input-row hidden" id="timer-input-row">
+      <input type="number" id="timer-minutes" min="1" max="180" value="10" />
+      <span class="setting-hint">minutes</span>
+    </div>
+  </div>
+
+  <div class="settings-footer">
+    <button class="btn btn-primary" id="btn-start">Start</button>
+    <span class="validation-msg" id="settings-validation"></span>
+  </div>
+</main>
+
+<!-- ================= SESSION ================= -->
+<main class="page screen" id="screen-session">
+  <div class="session-topbar">
+    <button class="btn btn-ghost btn-sm" id="btn-finish">Finish</button>
+    <div class="stats-cluster">
+      <span class="stat" id="stat-timer" style="display:none;">⏳ <strong id="stat-timer-val">--:--</strong></span>
+      <span class="stat">Score <strong id="stat-score">0/0</strong></span>
+      <span class="stat">Accuracy <strong id="stat-pct">0%</strong></span>
+    </div>
+  </div>
+
+  <p class="stamp-label tense-banner" id="tense-banner">Présent de l'Indicatif</p>
+
+  <div class="prompt-card">
+    <p class="prompt-line">
+      <span class="prompt-word" id="prompt-subject">il</span>
+      <span class="prompt-word" id="prompt-infinitive">parler</span>
+    </p>
+    <p class="prompt-english" id="prompt-english"></p>
+  </div>
+
+  <div class="answer-row">
+    <input type="text" id="answer-input" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="…" />
+    <button class="btn btn-ghost" id="btn-skip">Skip</button>
+    <button class="btn btn-primary" id="btn-check">Check</button>
+  </div>
+
+  <div class="feedback" id="feedback"></div>
+
+  <div class="session-footer">
+    <span class="kbd-hint"><kbd>Enter</kbd> check / next &nbsp;·&nbsp; <kbd>&rarr;</kbd> skip</span>
+  </div>
+</main>
+
+<!-- ================= END ================= -->
+<main class="page screen" id="screen-end">
+  <p class="eyebrow">Session Complete</p>
+  <h1 class="title" style="font-size:34px;">Nice work!</h1>
+  <p class="stat-big" id="end-score">0<span>/0</span></p>
+  <p class="end-pct" id="end-pct">0% accuracy</p>
+  <div class="end-actions">
+    <button class="btn btn-primary" id="btn-replay">Replay</button>
+    <button class="btn btn-ghost" id="btn-new-settings">New Settings</button>
+    <button class="btn btn-ghost" id="btn-home">Home</button>
+  </div>
+</main>
+
+<script src="verbs.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------------------------------------------------------------
+     SCREEN NAVIGATION
+     --------------------------------------------------------------------- */
+  function showScreen(id){
+    document.querySelectorAll(".screen").forEach(function(s){ s.classList.remove("active"); });
+    document.getElementById(id).classList.add("active");
+  }
+
+  document.getElementById("btn-graded").addEventListener("click", function(){ showScreen("screen-settings"); });
+  document.getElementById("settings-back").addEventListener("click", function(){ showScreen("screen-home"); });
+  document.getElementById("btn-home").addEventListener("click", function(){ showScreen("screen-home"); });
+  document.getElementById("btn-new-settings").addEventListener("click", function(){ showScreen("screen-settings"); });
+
+  /* ---------------------------------------------------------------------
+     SETTINGS SCREEN — build controls from PRONOUNS / TENSES metadata
+     --------------------------------------------------------------------- */
+  var pronounChipsEl = document.getElementById("pronoun-chips");
+  PRONOUNS.forEach(function(p){
+    var wrap = document.createElement("label");
+    wrap.style.display = "inline-flex";
+    wrap.innerHTML =
+      '<input class="chip-input" type="checkbox" checked value="' + p.key + '" id="pronoun-' + p.key + '">' +
+      '<span class="chip">' + p.label + '</span>';
+    pronounChipsEl.appendChild(wrap);
+  });
+
+  var tenseListEl = document.getElementById("tense-list");
+  TENSES.forEach(function(t){
+    var row = document.createElement("label");
+    row.className = "checkbox-row";
+    row.innerHTML =
+      '<input type="checkbox" checked value="' + t.key + '" id="tense-' + t.key + '"> ' + t.label;
+    tenseListEl.appendChild(row);
+  });
+
+  document.querySelectorAll("[data-pronoun-all]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var val = btn.getAttribute("data-pronoun-all") === "true";
+      document.querySelectorAll("#pronoun-chips input").forEach(function(i){ i.checked = val; });
+    });
+  });
+  document.querySelectorAll("[data-tense-all]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var val = btn.getAttribute("data-tense-all") === "true";
+      document.querySelectorAll("#tense-list input").forEach(function(i){ i.checked = val; });
+    });
+  });
+
+  /* toggle switches */
+  function wireSwitch(id, onChange){
+    var el = document.getElementById(id);
+    el.addEventListener("click", function(){
+      var next = el.getAttribute("aria-checked") !== "true";
+      el.setAttribute("aria-checked", String(next));
+      if (onChange) onChange(next);
+    });
+    return el;
+  }
+  wireSwitch("toggle-english");
+  wireSwitch("toggle-names");
+  wireSwitch("toggle-timer", function(on){
+    document.getElementById("timer-input-row").classList.toggle("hidden", !on);
+  });
+
+  function isOn(id){ return document.getElementById(id).getAttribute("aria-checked") === "true"; }
+
+  /* ---------------------------------------------------------------------
+     GATHER + VALIDATE SETTINGS, START SESSION
+     --------------------------------------------------------------------- */
+  document.getElementById("btn-start").addEventListener("click", function(){
+    var msg = document.getElementById("settings-validation");
+    msg.textContent = "";
+
+    var pronouns = Array.prototype.slice.call(document.querySelectorAll("#pronoun-chips input:checked")).map(function(i){ return i.value; });
+    var tenses = Array.prototype.slice.call(document.querySelectorAll("#tense-list input:checked")).map(function(i){ return i.value; });
+    var timerOn = isOn("toggle-timer");
+    var minutes = parseInt(document.getElementById("timer-minutes").value, 10);
+
+    if (pronouns.length === 0){ msg.textContent = "Choose at least one pronoun."; return; }
+    if (tenses.length === 0){ msg.textContent = "Choose at least one tense."; return; }
+    if (timerOn && (!minutes || minutes <= 0)){ msg.textContent = "Enter a valid number of minutes."; return; }
+
+    var settings = {
+      showEnglish: isOn("toggle-english"),
+      useNames: isOn("toggle-names"),
+      pronouns: pronouns,
+      tenses: tenses,
+      timerOn: timerOn,
+      timerMinutes: minutes,
+    };
+    startSession(settings);
+  });
+
+  /* ---------------------------------------------------------------------
+     SESSION STATE
+     --------------------------------------------------------------------- */
+  var session = null;
+
+  function pickRandom(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function pickNames(genderKey, count){
+    var pool = NAMES.filter(function(n){ return genderKey === "any" || n.gender === genderKey; });
+    var picked = [];
+    var copy = pool.slice();
+    for (var i = 0; i < count && copy.length; i++){
+      var idx = Math.floor(Math.random() * copy.length);
+      picked.push(copy.splice(idx, 1)[0].name);
+    }
+    return picked;
+  }
+
+  function subjectDisplay(pronounKey, useNames){
+    if (!useNames) return pronounLabel(pronounKey);
+    if (pronounKey === "il")    return pickNames("m", 1)[0];
+    if (pronounKey === "elle")  return pickNames("f", 1)[0];
+    if (pronounKey === "ils")   return pickNames("any", 2).join(" et ");
+    if (pronounKey === "elles") return pickNames("f", 2).join(" et ");
+    return pronounLabel(pronounKey); // je / tu / on stay as-is
+  }
+
+  function pronounLabel(key){
+    var found = PRONOUNS.filter(function(p){ return p.key === key; })[0];
+    return found ? found.label : key;
+  }
+
+  function tenseLabel(key){
+    var found = TENSES.filter(function(t){ return t.key === key; })[0];
+    return found ? found.label : key;
+  }
+
+  function startSession(settings){
+    session = {
+      settings: settings,
+      score: 0,
+      attempted: 0,
+      checked: false,
+      lastKey: null,
+      current: null,
+      timerRemaining: settings.timerOn ? settings.timerMinutes * 60 : null,
+      timerHandle: null,
+    };
+    showScreen("screen-session");
+    document.getElementById("stat-timer").style.display = settings.timerOn ? "" : "none";
+    updateStatsBar();
+    if (settings.timerOn) startTimer();
+    nextQuestion();
+    document.getElementById("answer-input").focus();
+  }
+
+  function startTimer(){
+    updateTimerDisplay();
+    session.timerHandle = setInterval(function(){
+      session.timerRemaining--;
+      updateTimerDisplay();
+      if (session.timerRemaining <= 0){
+        clearInterval(session.timerHandle);
+        endSession();
+      }
+    }, 1000);
+  }
+
+  function updateTimerDisplay(){
+    var el = document.getElementById("stat-timer-val");
+    var s = Math.max(0, session.timerRemaining);
+    var m = Math.floor(s / 60);
+    var sec = s % 60;
+    el.textContent = String(m).padStart(2, "0") + ":" + String(sec).padStart(2, "0");
+    document.getElementById("stat-timer").classList.toggle("timer-low", s <= 30);
+  }
+
+  function updateStatsBar(){
+    document.getElementById("stat-score").textContent = session.score + "/" + session.attempted;
+    var pct = session.attempted ? Math.round((session.score / session.attempted) * 100) : 0;
+    document.getElementById("stat-pct").textContent = pct + "%";
+  }
+
+  /* ---------------------------------------------------------------------
+     QUESTION GENERATION
+     --------------------------------------------------------------------- */
+  function nextQuestion(){
+    var s = session.settings;
+    var attempt = 0, q;
+    do {
+      var verb = pickRandom(VERBS);
+      var tenseKey = pickRandom(s.tenses);
+      var pronounKey = pickRandom(s.pronouns);
+      q = { verb: verb, tenseKey: tenseKey, pronounKey: pronounKey };
+      attempt++;
+    } while (
+      session.lastKey === (q.verb.infinitive + q.tenseKey + q.pronounKey) &&
+      attempt < 8
+    );
+    session.lastKey = q.verb.infinitive + q.tenseKey + q.pronounKey;
+
+    session.current = {
+      verb: q.verb,
+      tenseKey: q.tenseKey,
+      pronounKey: q.pronounKey,
+      subjectText: subjectDisplay(q.pronounKey, s.useNames),
+      answer: q.verb.conjugations[q.tenseKey][q.pronounKey],
+    };
+    session.checked = false;
+
+    document.getElementById("tense-banner").textContent = tenseLabel(q.tenseKey);
+    document.getElementById("prompt-subject").textContent = session.current.subjectText;
+    document.getElementById("prompt-infinitive").textContent = q.verb.infinitive;
+    document.getElementById("prompt-english").textContent = s.showEnglish ? "— " + q.verb.english : "";
+
+    var input = document.getElementById("answer-input");
+    input.value = "";
+    input.readOnly = false;
+    input.className = "";
+    input.focus();
+
+    document.getElementById("feedback").innerHTML = "";
+    document.getElementById("feedback").className = "feedback";
+    document.getElementById("btn-check").textContent = "Check";
+  }
+
+  /* ---------------------------------------------------------------------
+     CHECK / SKIP / ADVANCE
+     --------------------------------------------------------------------- */
+  var MARK_CHECK = '<svg class="mark" viewBox="0 0 26 26"><path d="M4 14 L11 21 L22 5" stroke="currentColor"/></svg>';
+  var MARK_CROSS = '<svg class="mark" viewBox="0 0 26 26"><path d="M5 5 L21 21 M21 5 L5 21" stroke="currentColor"/></svg>';
+
+  function normalize(str){
+    return str.trim().toLowerCase().replace(/\s+/g, " ");
+  }
+
+  function checkAnswer(){
+    if (!session || session.checked) { advance(); return; }
+    var input = document.getElementById("answer-input");
+    var given = normalize(input.value);
+    var correct = normalize(session.current.answer);
+    var isCorrect = given === correct && given.length > 0;
+
+    session.checked = true;
+    session.attempted++;
+    if (isCorrect) session.score++;
+    updateStatsBar();
+
+    input.readOnly = true;
+    input.className = isCorrect ? "correct" : "incorrect";
+
+    var fb = document.getElementById("feedback");
+    if (isCorrect){
+      fb.className = "feedback ok";
+      fb.innerHTML = MARK_CHECK + "Correct!";
+    } else {
+      fb.className = "feedback bad";
+      fb.innerHTML = MARK_CROSS + "Answer: " + session.current.answer;
+    }
+    document.getElementById("btn-check").textContent = "Next →";
+  }
+
+  function advance(){
+    nextQuestion();
+  }
+
+  function skip(){
+    if (!session) return;
+    advance(); // skipping never affects score, whether checked or not
+  }
+
+  document.getElementById("btn-check").addEventListener("click", function(){
+    if (session && session.checked) advance(); else checkAnswer();
+  });
+  document.getElementById("btn-skip").addEventListener("click", skip);
+  document.getElementById("btn-finish").addEventListener("click", endSession);
+
+  document.getElementById("answer-input").addEventListener("keydown", function(e){
+    if (e.key === "Enter"){
+      e.preventDefault();
+      if (session && session.checked) advance(); else checkAnswer();
+      return;
+    }
+    if (e.key === "ArrowRight" && session){
+      // once an answer's been checked, the field is read-only: arrow always skips.
+      if (session.checked){ e.preventDefault(); skip(); return; }
+      // while typing, only skip if the cursor is already at the end (nothing to move past)
+      var input = e.target;
+      var atEnd = input.selectionStart === input.value.length && input.selectionEnd === input.value.length;
+      if (atEnd){ e.preventDefault(); skip(); }
+    }
+  });
+
+  /* ---------------------------------------------------------------------
+     END SESSION
+     --------------------------------------------------------------------- */
+  function endSession(){
+    if (session && session.timerHandle) clearInterval(session.timerHandle);
+    var score = session ? session.score : 0;
+    var attempted = session ? session.attempted : 0;
+    var pct = attempted ? Math.round((score / attempted) * 100) : 0;
+
+    document.getElementById("end-score").innerHTML = score + "<span>/" + attempted + "</span>";
+    document.getElementById("end-pct").textContent = pct + "% accuracy";
+    showScreen("screen-end");
+  }
+
+  document.getElementById("btn-replay").addEventListener("click", function(){
+    if (session) startSession(session.settings);
+  });
+
+})();
+</script>
+</body>
+</html>

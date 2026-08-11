@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>French Learning Private Portal</title>
+<link rel="stylesheet" href="notebook-theme.css">
+<style>
+  /* ---- page-only additions (reuses notebook-theme.css tokens, no new colors) ---- */
+
+  #app{ width:100%; }
+  .screen{ display:none; }
+  .screen.active{ display:block; animation: pageIn 0.35s ease; }
+
+  /* password field, styled like the .btn family already in the theme */
+  .pw-field{
+    width:100%;
+    font-family: var(--font-mono);
+    font-size: 15px;
+    padding: 12px 14px;
+    border: 2px solid var(--ink);
+    border-radius: 4px;
+    background: var(--paper);
+    color: var(--ink);
+    margin: 6px 0 4px;
+  }
+  .pw-field:focus-visible{ outline: 2px solid var(--gold); outline-offset: 2px; }
+
+  .portal-badge{
+    display:inline-block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--paper);
+    background: var(--ink);
+    padding: 3px 9px;
+    border-radius: 20px;
+    margin-bottom: 14px;
+  }
+
+  /* module cards reuse .stamp but sit in a tighter grid when there are many */
+  .module-grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 18px;
+  }
+  .module-grid .stamp{ flex:none; }
+
+  @media (max-width: 560px){
+    .module-grid{ grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<main class="page" id="app">
+
+  <!-- =====================================================================
+       SCREEN 1 — PASSWORD
+       ===================================================================== -->
+  <section class="screen active" id="screen-pw">
+    <p class="eyebrow">Private Access</p>
+    <h1 class="title">French Learning<br>Private Portal</h1>
+    <p class="subtitle">This site is for sudarshan and his friends :).</p> <p class="subtitle">Enter your password to continue.</p>
+
+    <input class="pw-field" type="password" id="pw-input" placeholder="Password" autocomplete="off" spellcheck="false">
+    <div class="validation-msg" id="pw-error" style="min-height:18px; margin-bottom:14px;"></div>
+
+    <button class="btn btn-primary" onclick="checkPassword()">Enter Portal →</button>
+    <p class="kbd-hint" style="margin-top:22px;">© 2026 Sudarshan Timalsina · Private Learning Portal</p>
+  </section>
+
+  <!-- =====================================================================
+       SCREEN 2 — HUB (buttons rendered dynamically from PASSWORDS config)
+       ===================================================================== -->
+  <section class="screen" id="screen-hub">
+    <button class="back-link" onclick="logout()">← Log out</button>
+    <span class="portal-badge" id="hub-badge">Student</span>
+    <h1 class="title">Bienvenue !</h1>
+    <p class="subtitle">Choose where you'd like to go.</p>
+    <div class="stamp-row" id="hub-buttons"></div>
+  </section>
+
+  <!-- =====================================================================
+       SCREEN 3 — STUDY DAILY CYCLES (9 module links, rendered from MODULES)
+       ===================================================================== -->
+  <section class="screen" id="screen-study">
+    <button class="back-link" onclick="showScreen('screen-hub')">← Back</button>
+    <p class="stamp-label">Study Daily Cycles</p>
+    <h1 class="title">Your Modules</h1>
+    <p class="subtitle">Select a module to open its daily tasks.</p>
+    <div class="module-grid" id="study-buttons"></div>
+  </section>
+
+</main>
+
+<script>
+/* =========================================================================
+   CONFIG — this is the only part you should need to touch to add,
+   remove, or relink buttons and modules in the future.
+   ========================================================================= */
+
+// The 9 modules under "Study Daily Cycles" (same links as before).
+const MODULES = [
+  { num: "01A",    name: "Daily Tasks 1A",      href: "Speak French Fast academy/Module 1A/DAILY TASKS 1A.html" },
+  { num: "01B",    name: "Daily Tasks 1B",      href: "Speak French Fast academy/Module 1B/DAILY TASKS 1B.html" },
+  { num: "02",     name: "Lower Intermediate",  href: "Speak French Fast academy/Module 2 Lower Intermidate/DAILY TASK MODULE 2.html" },
+  { num: "03",     name: "Intermediate",        href: "Speak French Fast academy/Module 3 Intermidate/MODULE 3.html" },
+  { num: "04",     name: "Higher Intermediate", href: "Speak French Fast academy/module 4 Higher Intermidate/MODULE 4 REVIEWED.html" },
+  { num: "05",     name: "Module Five",         href: "Speak French Fast academy/Module 5/MODULE FIVE.html" },
+  { num: "06",     name: "Module Six",          href: "Speak French Fast academy/Module 6/MODULE SIX.html" },
+  { num: "Bonus",  name: "Movies & Songs",      href: "Speak French Fast academy/Movie and songs/index.html" },
+  { num: "Special",name: "Passed in 4 Months",  href: "Speak French Fast academy/Passed in 4 months/index.html" }
+];
+
+// Every possible hub button lives here once. To add a new button in the
+// future: add an entry here, then reference its key in a password's
+// "buttons" array below.
+const BUTTON_DEFS = {
+  study: {
+    num: "01", name: "Study Daily Cycles",
+    desc: "9 modules of daily tasks, from beginner to advanced.",
+    action: () => showScreen('screen-study')
+  },
+  conj: {
+    num: "02", name: "Conjugation Practice",
+    desc: "Drill French verb conjugations.",
+    href: "Conj.html"
+  },
+  tcf: {
+    num: "03", name: "TCF Cycles",
+    desc: "3 full exam-prep cycles for the TCF Canada.",
+    href: "tcf.html"
+  },
+  links: {
+    num: "04", name: "Links",
+    desc: "Useful external links and references.",
+    href: "Links.html"
+  },
+  resources: {
+    num: "05", name: "Other Resources",
+    desc: "Vocabulary, speaking drills, and extra tools.",
+    href: "resources.html"
+  }
+};
+
+// Passwords → which buttons that password unlocks, in order.
+const PASSWORDS = {
+  "Timalsina": { badge: "Student", buttons: ["study", "conj"] },
+  "admin":     { badge: "Admin",   buttons: ["study", "conj", "tcf", "links", "resources"] }
+};
+
+/* =========================================================================
+   APP LOGIC — shouldn't need to change this
+   ========================================================================= */
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function checkPassword() {
+  const input = document.getElementById('pw-input');
+  const err = document.getElementById('pw-error');
+  const val = input.value;
+
+  const match = PASSWORDS[val];
+  if (match) {
+    err.textContent = '';
+    renderHub(match);
+    showScreen('screen-hub');
+  } else {
+    err.textContent = 'Incorrect password. Please try again.';
+    input.value = '';
+    input.focus();
+  }
+}
+
+function renderHub(config) {
+  document.getElementById('hub-badge').textContent = config.badge;
+  const row = document.getElementById('hub-buttons');
+  row.innerHTML = '';
+
+  config.buttons.forEach((key, i) => {
+    const def = BUTTON_DEFS[key];
+    const btn = document.createElement('button');
+    btn.className = 'stamp';
+    btn.type = 'button';
+    btn.innerHTML = `
+      <span class="num">${String(i + 1).padStart(2, '0')}</span>
+      <span class="name">${def.name}</span>
+      <span class="desc">${def.desc}</span>`;
+    btn.addEventListener('click', () => {
+      if (def.href) window.location.href = def.href;
+      else if (def.action) def.action();
+    });
+    row.appendChild(btn);
+  });
+}
+
+function renderModules() {
+  const grid = document.getElementById('study-buttons');
+  grid.innerHTML = MODULES.map(m => `
+    <a class="stamp" href="${m.href.replace(/"/g, '&quot;')}" style="display:block; text-decoration:none; color:inherit;">
+      <span class="num">Module ${m.num}</span>
+      <span class="name">${m.name}</span>
+      <span class="desc">Open →</span>
+    </a>`).join('');
+}
+
+function logout() {
+  document.getElementById('pw-input').value = '';
+  document.getElementById('pw-error').textContent = '';
+  showScreen('screen-pw');
+}
+
+document.getElementById('pw-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') checkPassword();
+});
+
+renderModules();
+</script>
+
+</body>
+</html>

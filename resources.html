@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Other Resources — Speak French Fast Academy</title>
+<link rel="stylesheet" href="notebook-theme.css">
+<style>
+  /* ---- page-only additions (reuses notebook-theme.css tokens, no new colors) ---- */
+
+  .res-page{ max-width: 980px; }
+
+  .res-tabs{ display:flex; gap:8px; margin: 20px 0 18px; }
+  .res-tab-btn{
+    font-family: var(--font-body); font-weight:600; font-size: 13px;
+    padding: 9px 18px; border: 2px solid var(--ink); border-radius: 4px;
+    background: var(--paper); color: var(--ink); cursor: pointer;
+  }
+  .res-tab-btn.active{ background: var(--ink); color: var(--paper); }
+
+  .resource-tab{ display:none; }
+  .resource-tab.active{ display:block; }
+
+  .res-controls{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom: 16px; }
+  .res-search{
+    flex: 1 1 220px;
+    font-family: var(--font-body); font-size: 14px;
+    padding: 9px 12px; border: 2px solid var(--ink); border-radius: 4px;
+    background: var(--paper); color: var(--ink);
+  }
+  .vfilter-row{ display:flex; flex-wrap:wrap; gap:6px; }
+  .vfilter-btn{
+    font-family: var(--font-mono); font-size: 11.5px;
+    padding: 6px 12px; border-radius: 20px;
+    border: 1.5px solid var(--ink-soft); background: transparent; color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .vfilter-btn.active{ background: var(--ink); border-color: var(--ink); color: var(--paper); }
+  .res-stats{ font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-soft); margin-left:auto; }
+
+  .spk-speed-wrap{ display:flex; align-items:center; gap:8px; }
+  .spk-speed-label{ font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); }
+  .spk-speed-btns{ display:flex; gap:4px; }
+  .spk-speed-btn{
+    font-family: var(--font-mono); font-size: 11px; padding: 4px 8px;
+    border: 1px solid var(--ink-soft); border-radius: 4px;
+    background: transparent; color: var(--ink-soft); cursor: pointer;
+  }
+  .spk-speed-btn.active{ background: var(--ink); border-color: var(--ink); color: var(--paper); }
+
+  /* Vocabulary grid */
+  .vocab-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+  .vocab-card{
+    border: 2px solid var(--ink); border-radius: 4px; background: var(--paper);
+    padding: 14px 16px; box-shadow: 3px 3px 0 rgba(32,43,39,0.14);
+  }
+  .vc-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  .vc-french{ font-family: var(--font-display); font-size: 18px; font-weight:600; color: var(--ink); }
+  .vc-translation{ font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+  .vc-example{ font-size: 12px; color: var(--ink-soft); font-style: italic; margin-top: 8px; }
+  .vc-listen-btn, .spk-row-listen{
+    flex: 0 0 auto; width: 32px; height: 32px; border-radius: 50%;
+    border: none; background: var(--ink); color: var(--paper); cursor: pointer; font-size: 13px;
+  }
+  .vc-listen-btn.playing, .spk-row-listen.playing{ background: var(--gold); color: #2b2205; }
+  .vc-badges{ display:flex; align-items:center; gap:8px; margin-top: 10px; }
+  .vc-level{
+    font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 2px 8px; border-radius: 10px; color: #fff;
+  }
+  .lv-a1{ background: var(--green-ok); }
+  .lv-a2{ background: var(--green-ok); opacity: 0.75; }
+  .lv-b1{ background: var(--gold); color:#2b2205; }
+  .lv-b2{ background: var(--gold); opacity: 0.8; color:#2b2205; }
+  .lv-c1{ background: var(--margin-red); }
+  .lv-c2{ background: var(--margin-red); opacity: 0.8; }
+  .lv-unknown{ background: var(--paper-edge); color: var(--ink-soft); }
+  .vc-num{ font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft); margin-left:auto; }
+
+  .vocab-empty, .spk-empty{ color: var(--ink-soft); font-size: 13px; padding: 30px 0; text-align:center; }
+  .vocab-pagination{ display:flex; align-items:center; justify-content:center; gap:14px; margin-top:18px; }
+  .vpg-btn{
+    font-family: var(--font-mono); font-size: 12px; padding: 6px 14px;
+    border: 1.5px solid var(--ink); border-radius: 4px; background: var(--paper); cursor:pointer;
+  }
+  .vpg-info{ font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-soft); }
+
+  /* Speaking list */
+  .spk-list{ display:flex; flex-direction:column; gap: 8px; }
+  .spk-row{
+    display:flex; align-items:center; gap: 12px;
+    border: 1.5px solid var(--paper-edge); border-radius: 4px; background: var(--paper); padding: 10px 14px;
+  }
+  .spk-row.playing-row{ border-color: var(--gold); background: #fffdf3; }
+  .spk-row-num{ font-family: var(--font-mono); font-size: 11px; color: var(--margin-red); flex: 0 0 auto; }
+  .spk-row-content{ flex: 1; min-width: 0; }
+  .spk-row-french{ font-family: var(--font-display); font-size: 15.5px; color: var(--ink); }
+  .spk-row-translation{ font-size: 12.5px; color: var(--ink-soft); }
+  .spk-row-note{ font-size: 11px; color: var(--ink-soft); font-style: italic; }
+  .spk-row-right{ display:flex; align-items:center; gap: 8px; flex: 0 0 auto; }
+
+  .vocab-loading{ text-align:center; padding: 40px 0; color: var(--ink-soft); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<main class="page res-page">
+  <button class="back-link" onclick="location.href='index.html'">← Back to Portal</button>
+  <p class="eyebrow">Other Resources</p>
+  <h1 class="title">Vocabulary &amp; Speaking</h1>
+  <p class="subtitle">Tap any word or sentence to hear it spoken aloud in French.</p>
+
+  <div class="res-tabs">
+    <button class="res-tab-btn active" id="tab-btn-vocab" onclick="showResourceTab('vocab')">📖 Vocabulary</button>
+    <button class="res-tab-btn" id="tab-btn-speaking" onclick="showResourceTab('speaking')">🎙️ Speaking Practice</button>
+  </div>
+
+  <section class="resource-tab active" id="tab-vocab">
+    <div class="res-controls">
+      <input class="res-search" id="vocab-search" type="text" placeholder="Search French or English…" oninput="filterVocab()">
+      <span class="res-stats" id="vocab-stats">Loading…</span>
+    </div>
+    <div class="vfilter-row" id="vocab-filter-row" style="margin-bottom:16px;">
+      <button class="vfilter-btn active" data-level="all" onclick="setLevelFilter(this,'all')">All</button>
+    </div>
+    <div class="vocab-grid" id="vocab-grid">
+      <div class="vocab-loading">Loading vocabulary…</div>
+    </div>
+  </section>
+
+  <section class="resource-tab" id="tab-speaking">
+    <div class="res-controls">
+      <input class="res-search" id="spk-search" type="text" placeholder="Search sentences…" oninput="filterSpeaking()">
+      <span class="res-stats" id="spk-stats">Loading…</span>
+    </div>
+    <div class="res-controls">
+      <div class="vfilter-row" id="spk-level-filters">
+        <button class="vfilter-btn active" onclick="setSpkLevel(this,'all')">All</button>
+      </div>
+      <div class="spk-speed-wrap">
+        <span class="spk-speed-label">Speed</span>
+        <div class="spk-speed-btns">
+          <button class="spk-speed-btn" onclick="setSpkSpeed(this,0.25)">0.25×</button>
+          <button class="spk-speed-btn" onclick="setSpkSpeed(this,0.5)">0.5×</button>
+          <button class="spk-speed-btn active" onclick="setSpkSpeed(this,1)">1×</button>
+          <button class="spk-speed-btn" onclick="setSpkSpeed(this,1.5)">1.5×</button>
+          <button class="spk-speed-btn" onclick="setSpkSpeed(this,2)">2×</button>
+        </div>
+      </div>
+    </div>
+    <div class="spk-list" id="spk-list">
+      <div class="vocab-loading">Loading sentences…</div>
+    </div>
+  </section>
+</main>
+
+<script>
+function showResourceTab(name){
+  document.querySelectorAll('.resource-tab').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.res-tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('tab-btn-' + name).classList.add('active');
+  if (name === 'speaking' && !spkLoaded){ spkLoaded = true; loadSpeaking(); }
+}
+
+// ============================
+// VOCABULARY
+// ============================
+const SHEETDB_URL = 'https://sheetdb.io/api/v1/qhrlaztn0jzhf';
+let allVocab = [];
+let levelFilter = 'all';
+const PAGE_SIZE = 50;
+let vocabPage = 0;
+
+async function loadVocab(){
+  try{
+    const res = await fetch(SHEETDB_URL);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    allVocab = data.map(r => ({
+      id: r.id || '',
+      french: (r.french || r.French || '').trim(),
+      translation: (r.translation || r.Translation || '').trim(),
+      example: (r.example || r.Example || '').trim(),
+      level: (r.Level || r.level || r.difficulty || '').trim().toUpperCase()
+    })).filter(r => r.french);
+
+    buildLevelFilters();
+    vocabPage = 0;
+    renderVocab();
+  }catch(e){
+    console.error(e);
+    const grid = document.getElementById('vocab-grid');
+    if (grid) grid.innerHTML = '<div class="vocab-empty">⚠️ Could not load vocabulary. Please check your connection and try again.</div>';
+  }
+}
+
+function buildLevelFilters(){
+  const levels = [...new Set(allVocab.map(w => w.level).filter(Boolean))].sort();
+  const row = document.getElementById('vocab-filter-row');
+  if (!row) return;
+  row.innerHTML = '<button class="vfilter-btn active" data-level="all" onclick="setLevelFilter(this,\'all\')">All</button>'
+    + levels.map(l => `<button class="vfilter-btn" data-level="${l}" onclick="setLevelFilter(this,'${l}')">${l}</button>`).join('');
+}
+
+function getFilteredVocab(){
+  const q = (document.getElementById('vocab-search')?.value || '').toLowerCase().trim();
+  return allVocab.filter(w => {
+    const matchLevel = levelFilter === 'all' || w.level === levelFilter;
+    const matchQ = !q || w.french.toLowerCase().includes(q) || w.translation.toLowerCase().includes(q) || w.example.toLowerCase().includes(q);
+    return matchLevel && matchQ;
+  });
+}
+
+function renderVocab(){
+  const grid = document.getElementById('vocab-grid');
+  if (!grid) return;
+  const filtered = getFilteredVocab();
+  const total = allVocab.length;
+  const pageStart = vocabPage * PAGE_SIZE;
+  const pageWords = filtered.slice(pageStart, pageStart + PAGE_SIZE);
+
+  const statsEl = document.getElementById('vocab-stats');
+  if (statsEl) statsEl.textContent = `Showing ${Math.min(pageStart + PAGE_SIZE, filtered.length)} of ${filtered.length} words (${total} total)`;
+
+  if (!filtered.length){
+    grid.innerHTML = '<div class="vocab-empty">No words match your search.</div>';
+    return;
+  }
+
+  const levelColors = { A1:'lv-a1', A2:'lv-a2', B1:'lv-b1', B2:'lv-b2', C1:'lv-c1', C2:'lv-c2' };
+
+  grid.innerHTML = pageWords.map(w => {
+    const lvClass = levelColors[w.level] || 'lv-unknown';
+    return `
+      <div class="vocab-card" data-french="${w.french.replace(/"/g,'&quot;')}">
+        <div class="vc-top">
+          <div>
+            <div class="vc-french">${w.french}</div>
+            <div class="vc-translation">🇬🇧 ${w.translation}</div>
+          </div>
+          <button class="vc-listen-btn" onclick="speakFromCard(this)" title="Listen in French">🔊</button>
+        </div>
+        ${w.example ? `<div class="vc-example">💬 ${w.example}</div>` : ''}
+        <div class="vc-badges">
+          ${w.level ? `<span class="vc-level ${lvClass}">${w.level}</span>` : ''}
+          <span class="vc-num">#${w.id}</span>
+        </div>
+      </div>`;
+  }).join('');
+
+  let paginationHTML = '';
+  if (filtered.length > PAGE_SIZE){
+    const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+    paginationHTML = `<div class="vocab-pagination">`;
+    if (vocabPage > 0) paginationHTML += `<button class="vpg-btn" onclick="goVocabPage(${vocabPage-1})">← Prev</button>`;
+    paginationHTML += `<span class="vpg-info">Page ${vocabPage+1} of ${totalPages}</span>`;
+    if (vocabPage < totalPages - 1) paginationHTML += `<button class="vpg-btn" onclick="goVocabPage(${vocabPage+1})">Next →</button>`;
+    paginationHTML += `</div>`;
+  }
+  let pg = document.getElementById('vocab-pagination-ctrl');
+  if (!pg){
+    pg = document.createElement('div');
+    pg.id = 'vocab-pagination-ctrl';
+    grid.parentNode.insertBefore(pg, grid.nextSibling);
+  }
+  pg.innerHTML = paginationHTML;
+}
+
+function goVocabPage(p){
+  vocabPage = p;
+  renderVocab();
+  document.getElementById('tab-vocab').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function speakFromCard(btn){
+  const card = btn.closest('.vocab-card');
+  const text = card?.dataset?.french || '';
+  speakWord(text, btn);
+}
+
+function filterVocab(){ vocabPage = 0; renderVocab(); }
+
+function setLevelFilter(btn, level){
+  levelFilter = level;
+  vocabPage = 0;
+  document.querySelectorAll('#vocab-filter-row .vfilter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderVocab();
+}
+
+function speakWord(text, btn){
+  if (!text) return;
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'fr-FR';
+  utt.rate = 0.85;
+  utt.pitch = 1;
+  if (btn){
+    document.querySelectorAll('.vc-listen-btn.playing, .spk-row-listen.playing').forEach(b => b.classList.remove('playing'));
+    btn.classList.add('playing');
+    utt.onend = () => btn.classList.remove('playing');
+    utt.onerror = () => btn.classList.remove('playing');
+  }
+  window.speechSynthesis.speak(utt);
+}
+
+// ============================
+// SPEAKING PRACTICE
+// ============================
+const SPEAKING_URL = 'https://sheetdb.io/api/v1/jv3zlutne3gmh';
+let allSentences = [];
+let spkLevelFilter = 'all';
+let spkSpeed = 1;
+let spkLoaded = false;
+
+async function loadSpeaking(){
+  try{
+    const res = await fetch(SPEAKING_URL);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    allSentences = data.map(r => ({
+      id: r.id || '',
+      french: (r.french || r.French || '').trim(),
+      translation: (r.Translation || r.translation || '').trim(),
+      note: (r.Note || r.note || '').trim(),
+      level: (r.Level || r.level || '').trim()
+    })).filter(r => r.french);
+    buildSpkLevelFilters();
+    renderSpeakingList();
+  }catch(e){
+    console.error(e);
+    const list = document.getElementById('spk-list');
+    if (list) list.innerHTML = '<div class="spk-empty">⚠️ Could not load sentences. Check your connection.</div>';
+  }
+}
+
+function buildSpkLevelFilters(){
+  const levels = [...new Set(allSentences.map(s => s.level).filter(Boolean))].sort();
+  const row = document.getElementById('spk-level-filters');
+  if (!row) return;
+  row.innerHTML = '<button class="vfilter-btn active" onclick="setSpkLevel(this,\'all\')">All</button>'
+    + levels.map(l => `<button class="vfilter-btn" onclick="setSpkLevel(this,'${l}')">${l}</button>`).join('');
+}
+
+function getFilteredSentences(){
+  const q = (document.getElementById('spk-search')?.value || '').toLowerCase().trim();
+  return allSentences.filter(s => {
+    const matchLevel = spkLevelFilter === 'all' || s.level === spkLevelFilter;
+    const matchQ = !q || s.french.toLowerCase().includes(q) || s.translation.toLowerCase().includes(q) || s.note.toLowerCase().includes(q);
+    return matchLevel && matchQ;
+  });
+}
+
+function renderSpeakingList(){
+  const list = document.getElementById('spk-list');
+  const statsEl = document.getElementById('spk-stats');
+  if (!list) return;
+  const filtered = getFilteredSentences();
+  if (statsEl) statsEl.textContent = `${filtered.length} of ${allSentences.length} sentences`;
+  if (!filtered.length){
+    list.innerHTML = '<div class="spk-empty">No sentences match your search.</div>';
+    return;
+  }
+  const lvColors = { A1:'lv-a1',A2:'lv-a2',B1:'lv-b1',B2:'lv-b2','B1/B2':'lv-b1','B2/C1':'lv-b2',C1:'lv-c1',C2:'lv-c2' };
+  list.innerHTML = filtered.map(s => {
+    const lvClass = lvColors[s.level] || 'lv-unknown';
+    const safeText = s.french.replace(/"/g, '&quot;');
+    return `<div class="spk-row" id="spk-row-${s.id}">
+      <div class="spk-row-num">#${s.id}</div>
+      <div class="spk-row-content">
+        <div class="spk-row-french">${s.french}</div>
+        <div class="spk-row-translation">${s.translation}</div>
+        ${s.note ? `<span class="spk-row-note">📌 ${s.note}</span>` : ''}
+      </div>
+      <div class="spk-row-right">
+        <button class="spk-row-listen" data-french="${safeText}" data-id="${s.id}" onclick="speakSentence(this)" title="Listen">🔊</button>
+        ${s.level ? `<span class="vc-level ${lvClass}" style="font-size:9px;">${s.level}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterSpeaking(){ renderSpeakingList(); }
+
+function setSpkLevel(btn, level){
+  spkLevelFilter = level;
+  document.querySelectorAll('#spk-level-filters .vfilter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderSpeakingList();
+}
+
+function setSpkSpeed(btn, speed){
+  spkSpeed = speed;
+  document.querySelectorAll('.spk-speed-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function speakSentence(btn){
+  const text = btn.dataset.french;
+  const id = btn.dataset.id;
+  if (!text) return;
+  window.speechSynthesis.cancel();
+  document.querySelectorAll('.spk-row-listen.playing').forEach(b => b.classList.remove('playing'));
+  document.querySelectorAll('.spk-row.playing-row').forEach(r => r.classList.remove('playing-row'));
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'fr-FR';
+  utt.rate = spkSpeed;
+  utt.pitch = 1;
+  btn.classList.add('playing');
+  const row = document.getElementById('spk-row-' + id);
+  if (row) row.classList.add('playing-row');
+  utt.onend = () => { btn.classList.remove('playing'); if (row) row.classList.remove('playing-row'); };
+  utt.onerror = () => { btn.classList.remove('playing'); if (row) row.classList.remove('playing-row'); };
+  window.speechSynthesis.speak(utt);
+}
+
+loadVocab();
+</script>
+
+</body>
+</html>

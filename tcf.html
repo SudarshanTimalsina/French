@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TCF Cycles — Speak French Fast Academy</title>
+<link rel="stylesheet" href="notebook-theme.css">
+<style>
+  /* ---- page-only additions (reuses notebook-theme.css tokens, no new colors) ---- */
+
+  .tcf-page{ max-width: 1120px; }
+
+  .tcf-layout{ display:flex; gap:26px; align-items:flex-start; margin-top:22px; }
+
+  /* Sidebar */
+  .tcf-sidebar{ flex:0 0 250px; position:sticky; top:20px; }
+  .tcf-cycle-tabs{ display:flex; gap:6px; margin-bottom:14px; }
+  .tcf-cycle-btn{
+    flex:1;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 8px 4px;
+    border: 2px solid var(--ink);
+    border-radius: 4px;
+    background: var(--paper);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .tcf-cycle-btn.active{ background: var(--ink); color: var(--paper); }
+
+  .tcf-day-list{
+    max-height: 460px;
+    overflow-y: auto;
+    border: 2px solid var(--ink);
+    border-radius: 4px;
+    background: var(--paper);
+  }
+  .tcf-day-item{
+    display:flex; align-items:center; gap:8px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--paper-edge);
+  }
+  .tcf-day-item:last-child{ border-bottom:none; }
+  .tcf-day-item:hover{ background: var(--paper-edge); color: var(--ink); }
+  .tcf-day-item.active{ background: var(--ink); color: var(--paper); }
+  .tcf-day-num{ color: var(--margin-red); font-weight:600; min-width: 20px; }
+  .tcf-day-item.active .tcf-day-num{ color: var(--gold); }
+  .tcf-day-zoom{
+    margin-left:auto;
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: var(--gold);
+    color: #2b2205;
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+
+  .tcf-progress{ margin-top: 12px; font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-soft); }
+  .progress-bar{ height:4px; background: var(--paper-edge); border-radius:2px; margin-top:6px; overflow:hidden; }
+  .progress-fill{ height:100%; background: var(--gold); transition: width 0.3s ease; width:0%; }
+
+  /* Main content */
+  .tcf-main{ flex:1; min-width:0; }
+  .tcf-topbar{
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+    border-bottom: 2px solid var(--ink);
+  }
+  #tcf-tb-cycle{
+    font-family: var(--font-mono); font-size: 11px; font-weight:600;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--margin-red);
+  }
+  #tcf-tb-day{ font-family: var(--font-display); font-size: 21px; color: var(--ink); }
+  #tcf-tb-zoom{
+    font-family: var(--font-mono); font-size: 11px; font-weight:600;
+    background: var(--gold); color:#2b2205; padding: 3px 10px; border-radius:20px;
+  }
+  .tcf-nav-btns{ margin-left:auto; display:flex; gap:6px; }
+
+  .tcf-content-scroll{ max-height: 640px; overflow-y: auto; padding-right: 6px; }
+  .tcf-welcome{ text-align:center; padding: 60px 20px; color: var(--ink-soft); }
+  .tcf-welcome-icon{ font-size: 44px; margin-bottom: 14px; }
+  .tcf-welcome h2{ font-family: var(--font-display); font-size: 24px; color: var(--ink); margin: 0 0 8px; }
+
+  /* ---- Notion-exported content, restyled to notebook tokens ---- */
+  .notion-content{ color: var(--ink); font-family: var(--font-body); font-size: 14.5px; line-height: 1.65; }
+  .notion-content .page-title,
+  .notion-content .page-description,
+  .notion-content table.properties,
+  .notion-content .page-header-icon{ display:none; }
+  .notion-content h1, .notion-content h2, .notion-content h3{ font-family: var(--font-display); color: var(--ink); }
+  .notion-content p{ margin: 0.5em 0; }
+  .notion-content a{ color: var(--margin-red); text-decoration: underline; word-break: break-word; }
+  .notion-content hr{ border:none; border-top: 1px dashed var(--paper-edge); margin: 16px 0; }
+  .notion-content ul.bulleted-list{ margin: 6px 0; padding-inline-start: 1.4em; }
+  .notion-content ul.bulleted-list > li{ margin-bottom: 4px; }
+  .notion-content strong{ color: var(--ink); }
+
+  .notion-content figure.callout{
+    display:flex; gap:10px;
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin: 14px 0;
+    border: 1px solid var(--paper-edge);
+    background: #fff;
+  }
+  .notion-content figure.block-color-gray_background{ background: var(--paper-edge); }
+  .notion-content .callout p{ margin: 0 0 6px; }
+  .notion-content .callout p:last-child{ margin-bottom:0; }
+
+  .notion-content ul.toggle{ list-style:none; padding-left:0; margin: 10px 0; }
+  .notion-content ul.toggle > li > details{
+    border-left: 2px solid var(--gold);
+    padding-left: 14px;
+    margin: 10px 0;
+  }
+  .notion-content ul.toggle > li > details > summary{
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-size: 16.5px;
+    padding: 4px 0;
+    color: var(--ink);
+  }
+  .notion-content ul.toggle ul.toggle > li > details > summary{ font-size: 15px; }
+
+  .notion-content figure.image{ text-align:center; margin: 14px 0; }
+  .notion-content figure.image img{ max-width:100%; height:auto !important; border-radius:4px; border:1px solid var(--paper-edge); }
+  .notion-content .icon{ margin-right:6px; }
+
+  @media (max-width: 780px){
+    .tcf-layout{ flex-direction: column; }
+    .tcf-sidebar{ position:static; width:100%; flex:none; }
+    .tcf-day-list{ max-height: 260px; }
+    .tcf-content-scroll{ max-height: none; }
+  }
+</style>
+</head>
+<body>
+
+<main class="page tcf-page">
+  <button class="back-link" onclick="location.href='index.html'">← Back to Portal</button>
+  <p class="eyebrow">TCF Canada Prep</p>
+  <h1 class="title">TCF Cycles</h1>
+  <p class="subtitle">Full cycles of daily exam-prep tasks. Pick a cycle, then a day.</p>
+
+  <div class="tcf-layout">
+    <aside class="tcf-sidebar">
+      <div class="tcf-cycle-tabs" id="tcf-cycle-tabs"></div>
+      <div class="tcf-day-list" id="tcf-day-list"></div>
+      <div class="tcf-progress">
+        <span id="progress-text">0 of 0 days</span>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      </div>
+    </aside>
+
+    <section class="tcf-main">
+      <div class="tcf-topbar">
+        <span id="tcf-tb-cycle"></span>
+        <span id="tcf-tb-day"></span>
+        <span id="tcf-tb-zoom" style="display:none;">📹 Zoom Day</span>
+        <div class="tcf-nav-btns">
+          <button class="btn btn-sm" onclick="tcfNavigate(-1)">← Prev</button>
+          <button class="btn btn-sm" onclick="tcfNavigate(1)">Next →</button>
+        </div>
+      </div>
+      <div class="tcf-content-scroll" id="tcf-content-scroll">
+        <div class="tcf-welcome" id="tcf-welcome">
+          <div class="tcf-welcome-icon">🏆</div>
+          <h2>TCF Canada Prep</h2>
+          <p>Choose a cycle, then select a day from the list to begin your practice.</p>
+        </div>
+        <div class="notion-content" id="tcf-page-content" style="display:none;"></div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- TCF_DAYS data — edit tcf-data.js to add/update days -->
+<script src="tcf-data.js"></script>
+<script>
+let tcfCycle = null;
+let tcfDayIdx = -1;
+
+function initTcf(){
+  const tabsEl = document.getElementById('tcf-cycle-tabs');
+  const cycles = Object.keys(TCF_DAYS);
+  tabsEl.innerHTML = cycles.map((c, i) =>
+    `<button class="tcf-cycle-btn${i === 0 ? ' active' : ''}" data-cycle="${c}" onclick="selectCycle('${c}')">${c.replace('cycle', 'Cycle ')}</button>`
+  ).join('');
+  selectCycle(cycles[0]);
+}
+
+function selectCycle(cycle){
+  tcfCycle = cycle;
+  tcfDayIdx = -1;
+  document.querySelectorAll('.tcf-cycle-btn').forEach(b => b.classList.toggle('active', b.dataset.cycle === cycle));
+  renderTcfDayList();
+  showTcfWelcome();
+}
+
+function renderTcfDayList(){
+  const list = document.getElementById('tcf-day-list');
+  const days = TCF_DAYS[tcfCycle];
+  list.innerHTML = '';
+  days.forEach((d, i) => {
+    const el = document.createElement('div');
+    el.className = 'tcf-day-item' + (i === tcfDayIdx ? ' active' : '');
+    el.innerHTML = `
+      <span class="tcf-day-num">${d.day}</span>
+      <span>Day ${d.day}</span>
+      ${d.zoom ? '<span class="tcf-day-zoom">Zoom</span>' : ''}
+    `;
+    el.onclick = () => selectTcfDay(i);
+    list.appendChild(el);
+  });
+  updateProgress();
+}
+
+function selectTcfDay(idx){
+  tcfDayIdx = idx;
+  const days = TCF_DAYS[tcfCycle];
+  const day = days[idx];
+
+  document.querySelectorAll('.tcf-day-item').forEach((el, i) => el.classList.toggle('active', i === idx));
+
+  document.getElementById('tcf-tb-cycle').textContent = tcfCycle.replace('cycle', 'Cycle ');
+  document.getElementById('tcf-tb-day').textContent = 'Day ' + day.day + (day.zoom ? ' (Zoom Day)' : '');
+  document.getElementById('tcf-tb-zoom').style.display = day.zoom ? 'inline' : 'none';
+
+  document.getElementById('tcf-welcome').style.display = 'none';
+  const pc = document.getElementById('tcf-page-content');
+  pc.style.display = 'block';
+  pc.innerHTML = day.content;
+
+  document.getElementById('tcf-content-scroll').scrollTo({ top: 0, behavior: 'smooth' });
+  updateProgress();
+}
+
+function showTcfWelcome(){
+  document.getElementById('tcf-welcome').style.display = 'flex';
+  document.getElementById('tcf-page-content').style.display = 'none';
+  document.getElementById('tcf-tb-cycle').textContent = '';
+  document.getElementById('tcf-tb-day').textContent = '';
+  document.getElementById('tcf-tb-zoom').style.display = 'none';
+}
+
+function updateProgress(){
+  const days = TCF_DAYS[tcfCycle];
+  const pct = tcfDayIdx < 0 ? 0 : Math.round(((tcfDayIdx + 1) / days.length) * 100);
+  document.getElementById('progress-text').textContent =
+    tcfDayIdx < 0 ? `0 of ${days.length} days` : `Day ${days[tcfDayIdx].day} of ${days.length}`;
+  document.getElementById('progress-fill').style.width = pct + '%';
+}
+
+function tcfNavigate(dir){
+  const days = TCF_DAYS[tcfCycle];
+  const next = tcfDayIdx + dir;
+  if (next >= 0 && next < days.length){
+    selectTcfDay(next);
+    const items = document.querySelectorAll('.tcf-day-item');
+    if (items[next]) items[next].scrollIntoView({ block: 'nearest' });
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') tcfNavigate(1);
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') tcfNavigate(-1);
+});
+
+initTcf();
+</script>
+
+</body>
+</html>

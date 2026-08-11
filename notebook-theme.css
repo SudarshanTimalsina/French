@@ -1,0 +1,394 @@
+/* ==========================================================================
+   NOTEBOOK THEME
+   A reusable "school exercise book" design system: ruled paper, a red
+   margin rule, rubber-stamp buttons, and a warm/desk backdrop.
+
+   HOW TO USE ON A NEW SITE
+   1. Put this file next to your HTML as notebook-theme.css and link it:
+        <link rel="stylesheet" href="notebook-theme.css">
+      (the font imports are already inside this file, nothing else to add)
+
+   2. Wrap your main content in a "page" — this is the paper itself:
+        <main class="page">
+          <p class="eyebrow">Section label</p>
+          <h1 class="title">Headline</h1>
+          <p class="subtitle">Supporting line.</p>
+          ...
+        </main>
+      If your body isn't already centering content on a dark backdrop,
+      the base <body> rules below do that for you automatically.
+
+   3. Reuse the components below as needed — buttons, toggle switches,
+      chip/tag selectors, checkbox rows, a kbd hint, and a check/cross
+      "feedback" mark pattern for validation states.
+
+   4. When asking an AI to build a new page with this system, point it at
+      this file and say: "use the notebook-theme.css classes and tokens,
+      don't invent new colors — reuse --ink, --margin-red, --paper etc."
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&family=Caveat:wght@600;700&display=swap');
+
+/* -------------------------------------------------------------------------
+   TOKENS
+   -------------------------------------------------------------------------
+   --desk        page backdrop, the "desk" the notebook sits on
+   --paper       the notebook page itself
+   --paper-edge  faint dividers/borders on paper
+   --grid-blue   ruled horizontal lines
+   --margin-red  red margin rule + accents ("red pen" moments)
+   --ink         primary text
+   --ink-soft    secondary/muted text
+   --green-ok    success/correct state
+   --gold        focus rings + small highlight accents
+   ------------------------------------------------------------------------- */
+:root{
+  --desk:        #24372E;
+  --desk-dark:   #1B2A24;
+  --paper:       #FBF8EF;
+  --paper-edge:  #EFEAD9;
+  --grid-blue:   #C3D9E3;
+  --margin-red:  #B23B2E;
+  --ink:         #202B27;
+  --ink-soft:    #4B5A54;
+  --green-ok:    #2F7D5C;
+  --gold:        #C89B3C;
+  --shadow:      0 18px 40px -12px rgba(0,0,0,0.45);
+
+  /* Fraunces = display serif, Work Sans = body, IBM Plex Mono = data/labels,
+     Caveat = handwritten "red pen" accents — use sparingly, short text only */
+  --font-display: 'Fraunces', serif;
+  --font-body:    'Work Sans', sans-serif;
+  --font-mono:    'IBM Plex Mono', monospace;
+  --font-pen:     'Caveat', cursive;
+}
+
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  min-height:100vh;
+  background:
+    radial-gradient(ellipse at top, rgba(255,255,255,0.05), transparent 60%),
+    var(--desk);
+  background-attachment: fixed;
+  font-family: var(--font-body);
+  color: var(--ink);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding: 28px 16px;
+}
+
+a:focus-visible, button:focus-visible, input:focus-visible, label:focus-visible{
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
+
+/* -------------------------------------------------------------------------
+   PAGE — the ruled paper card. This is the signature element: keep it to
+   one per screen, and keep everything inside it quiet and disciplined.
+   ------------------------------------------------------------------------- */
+.page{
+  position:relative;
+  width:100%;
+  max-width: 760px;
+  background: var(--paper);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+  padding: 46px 40px 40px 76px;
+  background-image:
+    repeating-linear-gradient(to bottom, transparent, transparent 30px, var(--grid-blue) 31px);
+  background-position: 0 6px;
+}
+.page::before{ /* red margin rule */
+  content:"";
+  position:absolute;
+  top:0; bottom:0; left: 46px;
+  width: 1px;
+  background: var(--margin-red);
+  opacity: 0.55;
+}
+.page::after{ /* punch holes for a bit of desk-notebook realism — remove if unwanted */
+  content:"";
+  position:absolute;
+  left: -14px; top: 50%;
+  transform: translateY(-50%);
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--desk);
+  box-shadow:
+    0 -140px 0 var(--desk),
+    0 140px 0 var(--desk),
+    inset 0 2px 4px rgba(0,0,0,0.35);
+}
+
+@media (max-width: 560px){
+  .page{ padding: 36px 20px 32px 52px; }
+  .page::before{ left: 26px; }
+}
+
+/* simple fade/slide used when swapping between screens inside a .page —
+   toggle with a "active" class on whichever screen is visible */
+.screen{ display:none; }
+.screen.active{ display:block; animation: pageIn 0.35s ease; }
+@keyframes pageIn{
+  from{ opacity:0; transform: translateY(6px); }
+  to{ opacity:1; transform: translateY(0); }
+}
+
+/* -------------------------------------------------------------------------
+   TYPOGRAPHY
+   ------------------------------------------------------------------------- */
+.eyebrow{
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: 0 0 6px;
+}
+h1.title, .title{
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 44px;
+  line-height: 1.05;
+  margin: 0 0 8px;
+  color: var(--ink);
+}
+p.subtitle, .subtitle{
+  font-size: 15px;
+  color: var(--ink-soft);
+  margin: 0 0 34px;
+  max-width: 46ch;
+}
+/* a short, legible "stamped label" line — e.g. a status, category, or
+   section marker. Not the handwritten font: this one needs to be read
+   at a glance, so it stays in the mono face. */
+.stamp-label{
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--margin-red);
+  margin: 0 0 6px;
+}
+@media (max-width: 560px){
+  h1.title, .title{ font-size: 32px; }
+}
+
+/* -------------------------------------------------------------------------
+   STAMP CARDS — big rubber-stamp-style option buttons (e.g. a landing
+   page's main choices).
+   ------------------------------------------------------------------------- */
+.stamp-row{ display:flex; gap: 22px; flex-wrap: wrap; }
+.stamp{
+  position:relative;
+  flex: 1 1 220px;
+  text-align:left;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  padding: 22px 20px;
+  cursor:pointer;
+  font-family: var(--font-body);
+  transform: rotate(-0.6deg);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  box-shadow: 3px 3px 0 rgba(32,43,39,0.18);
+}
+.stamp:nth-child(2){ transform: rotate(0.7deg); }
+.stamp:hover:not(:disabled){
+  transform: rotate(0deg) translateY(-2px);
+  box-shadow: 5px 6px 0 rgba(32,43,39,0.22);
+  background: #fff;
+}
+.stamp:disabled{ cursor: not-allowed; opacity: 0.55; }
+.stamp .num{
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--margin-red);
+  letter-spacing: 0.08em;
+}
+.stamp .name{
+  display:block;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  margin: 4px 0 4px;
+}
+.stamp .desc{ display:block; font-size: 13px; color: var(--ink-soft); }
+.badge-soon{
+  position:absolute;
+  top: -10px; right: -10px;
+  background: var(--gold);
+  color: #2b2205;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 3px;
+  transform: rotate(6deg);
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+}
+
+/* -------------------------------------------------------------------------
+   BUTTONS
+   ------------------------------------------------------------------------- */
+.btn{
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  border-radius: 4px;
+  padding: 12px 22px;
+  cursor: pointer;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease, opacity 0.12s ease;
+  box-shadow: 3px 3px 0 rgba(32,43,39,0.18);
+}
+.btn:hover:not(:disabled){ transform: translateY(-2px); box-shadow: 4px 5px 0 rgba(32,43,39,0.22); }
+.btn:active:not(:disabled){ transform: translateY(0); box-shadow: 1px 1px 0 rgba(32,43,39,0.18); }
+.btn-primary{ background: var(--ink); color: var(--paper); }
+.btn-primary:hover:not(:disabled){ background: #16201c; }
+.btn:disabled{ opacity: 0.4; cursor: not-allowed; box-shadow:none; transform:none; }
+.btn-ghost{ background: transparent; box-shadow:none; border-color: var(--ink-soft); color: var(--ink-soft); }
+.btn-ghost:hover:not(:disabled){ box-shadow:none; border-color: var(--ink); color: var(--ink); transform:none; }
+.btn-sm{ padding: 6px 12px; font-size: 12px; }
+
+.back-link{
+  display:inline-flex;
+  align-items:center;
+  gap: 6px;
+  background:none;
+  border:none;
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0 0 22px;
+}
+.back-link:hover{ color: var(--ink); }
+
+/* -------------------------------------------------------------------------
+   SETTING ROW — a labelled control block (used with .switch, a chip
+   group, a checkbox list, etc.)
+   ------------------------------------------------------------------------- */
+.setting{ padding: 20px 0; border-bottom: 1px dashed var(--paper-edge); }
+.setting:last-of-type{ border-bottom:none; }
+.setting-head{ display:flex; align-items:flex-start; justify-content:space-between; gap: 16px; }
+.setting-label{ font-family: var(--font-display); font-size: 18px; font-weight: 600; margin: 0 0 3px; }
+.setting-hint{ font-size: 12.5px; color: var(--ink-soft); margin:0; max-width: 48ch; }
+
+/* toggle switch — <button class="switch" role="switch" aria-checked="false"> */
+.switch{
+  position:relative;
+  width: 44px; height: 24px;
+  flex: 0 0 auto;
+  background: #d8d3c2;
+  border-radius: 20px;
+  border: none;
+  cursor:pointer;
+  transition: background 0.15s ease;
+}
+.switch::after{
+  content:"";
+  position:absolute;
+  top: 3px; left: 3px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  transition: left 0.15s ease;
+}
+.switch[aria-checked="true"]{ background: var(--green-ok); }
+.switch[aria-checked="true"]::after{ left: 23px; }
+
+/* chip / tag multi-select — wrap a hidden checkbox + visible <span class="chip"> in a <label> */
+.chip-grid{ display:flex; flex-wrap:wrap; gap: 8px; margin-top: 14px; }
+.chip-input{ position:absolute; opacity:0; pointer-events:none; }
+.chip{
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: 7px 13px;
+  border-radius: 20px;
+  border: 1.5px solid var(--ink-soft);
+  color: var(--ink-soft);
+  background: transparent;
+  cursor:pointer;
+  user-select:none;
+  transition: all 0.12s ease;
+}
+.chip-input:checked + .chip{ background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.chip-input:focus-visible + .chip{ outline: 2px solid var(--gold); outline-offset:2px; }
+
+/* plain checkbox list rows */
+.checkbox-list{ margin-top: 14px; display:flex; flex-direction:column; gap:8px; }
+.checkbox-row{ display:flex; align-items:center; gap: 10px; font-size: 14px; cursor:pointer; }
+.checkbox-row input{ accent-color: var(--ink); width:16px; height:16px; }
+
+.quick-links{ display:flex; gap:12px; margin-top:10px; }
+.quick-links button{
+  background:none; border:none; padding:0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing:0.05em;
+  color: var(--margin-red);
+  text-decoration: underline;
+  cursor:pointer;
+}
+
+.validation-msg{ font-size: 12.5px; color: var(--margin-red); font-family: var(--font-mono); }
+
+/* -------------------------------------------------------------------------
+   FEEDBACK — a check/cross "red pen" mark for validation or graded
+   results. Add class "ok" or "bad" alongside a .mark svg (see markup
+   below) and short text.
+
+   Markup:
+   <div class="feedback ok">
+     <svg class="mark" viewBox="0 0 26 26"><path d="M4 14 L11 21 L22 5" stroke="currentColor"/></svg>
+     Correct!
+   </div>
+   ------------------------------------------------------------------------- */
+.feedback{
+  min-height: 34px;
+  margin-top: 16px;
+  font-family: var(--font-pen);
+  font-size: 24px;
+  display:flex;
+  align-items:center;
+  gap: 10px;
+}
+.feedback.ok{ color: var(--green-ok); }
+.feedback.bad{ color: var(--margin-red); }
+.feedback .mark{ width:26px; height:26px; flex:0 0 auto; }
+.feedback .mark path{
+  fill:none; stroke-width:5; stroke-linecap:round; stroke-linejoin:round;
+  stroke-dasharray: 40; stroke-dashoffset: 40;
+  animation: draw 0.35s ease forwards;
+}
+@keyframes draw{ to{ stroke-dashoffset:0; } }
+
+/* -------------------------------------------------------------------------
+   MISC UTILITIES
+   ------------------------------------------------------------------------- */
+.kbd-hint{ font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); }
+.kbd-hint kbd{
+  font-family: var(--font-mono);
+  background: var(--paper-edge);
+  border-radius: 3px;
+  padding: 1px 5px;
+  border: 1px solid #ddd6bf;
+}
+
+/* a big mono statistic, e.g. a score or count, with a muted "/total" tail */
+.stat-big{ font-family: var(--font-mono); font-size: 56px; color: var(--ink); margin: 10px 0 4px; }
+.stat-big span{ color: var(--ink-soft); font-size: 28px; }
