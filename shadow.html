@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le Shadowing — French Shadowing Practice</title>
+<link rel="stylesheet" href="notebook-theme.css">
+<style>
+  /* Page-specific additions — reuse notebook-theme tokens, don't invent new colors */
+  .page{ max-width: 860px; }
+  textarea{
+    width:100%;
+    min-height:120px;
+    padding:14px;
+    font-family: var(--font-body);
+    font-size:0.95rem;
+    border:1px solid var(--paper-edge);
+    border-radius:4px;
+    background:#fff;
+    color: var(--ink);
+    resize:vertical;
+  }
+  textarea:focus{ outline:2px solid var(--gold); outline-offset:1px; }
+
+  #status{
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+    min-height:1.2em;
+  }
+  #status.error{ color: var(--margin-red); }
+
+  .player{ margin-top:30px; }
+
+  .transcript-box{
+    background:#fff;
+    border:1px solid var(--paper-edge);
+    border-radius:6px;
+    padding:26px 28px;
+    max-height:520px;
+    min-height:340px;
+    overflow-y:auto;
+    font-family: var(--font-display);
+    font-size:1.3rem;
+    line-height:1.7;
+    scroll-behavior:smooth;
+  }
+  .transcript-box p{ margin:0 0 1em; }
+  .word{ cursor:pointer; border-radius:3px; padding:0 1px; }
+  .word:hover{ background: var(--paper-edge); }
+  .word.active{
+    background: var(--gold);
+    color:#2b2205;
+    box-shadow:0 0 0 1px #a67e28;
+  }
+
+  /* controls sit BELOW the transcript, notebook "setting row" style */
+  .transport{
+    margin-top:16px;
+    padding-top:16px;
+    border-top:1px dashed var(--paper-edge);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  #progressBar{
+    flex:1 1 180px;
+    min-width:120px;
+    height:8px;
+    background: var(--paper-edge);
+    border-radius:4px;
+    overflow:hidden;
+    cursor:pointer;
+  }
+  #progressFill{ height:100%; width:0%; background: var(--margin-red); }
+  #timeLabel{
+    font-family: var(--font-mono);
+    font-size:0.75rem;
+    color: var(--ink-soft);
+    white-space:nowrap;
+  }
+  select{
+    font-family: var(--font-mono);
+    font-size:0.78rem;
+    padding:6px 8px;
+    border-radius:4px;
+    border:1px solid var(--paper-edge);
+    background:#fff;
+    color: var(--ink);
+    max-width:180px;
+  }
+  .record-row{
+    margin-top:12px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .record-row .hint{
+    font-family: var(--font-mono);
+    font-size:0.7rem;
+    color: var(--ink-soft);
+    max-width:40ch;
+  }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="eyebrow">Apprentissage actif</p>
+  <h1 class="title">Le Shadowing</h1>
+  <p class="subtitle">Paste any French text, generate audio, and follow the highlighted word as it's spoken — the shadowing method, self-paced.</p>
+
+  <label for="frenchInput" class="stamp-label">Texte français</label>
+  <textarea id="frenchInput" placeholder="Collez votre texte français ici…"></textarea>
+  <div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap;">
+    <button id="generateBtn" class="btn btn-primary">Generate Audio</button>
+    <label for="voiceSelect" style="margin:0;" class="kbd-hint">Voix</label>
+    <select id="voiceSelect"></select>
+    <span id="status"></span>
+  </div>
+
+  <div class="player" id="player" style="display:none;">
+    <div id="transcript" class="transcript-box"></div>
+
+    <div class="transport">
+      <button class="btn btn-sm" id="playPauseBtn" disabled>▶ Play</button>
+      <button class="btn btn-ghost btn-sm" id="backBtn" disabled title="Back 5 words">◀◀ 5w</button>
+      <button class="btn btn-ghost btn-sm" id="fwdBtn" disabled title="Forward 5 words">5w ▶▶</button>
+      <div id="progressBar"><div id="progressFill"></div></div>
+      <span id="timeLabel">0 / 0 mots</span>
+      <select id="rateSelect" disabled>
+        <option value="0.6">0.6×</option>
+        <option value="0.75">0.75×</option>
+        <option value="1" selected>1×</option>
+        <option value="1.25">1.25×</option>
+        <option value="1.5">1.5×</option>
+      </select>
+    </div>
+
+    <div class="record-row">
+      <button class="btn btn-ghost btn-sm" id="recordBtn" disabled>⏺ Record &amp; Download</button>
+      <span class="hint">Experimental: replays the text from the start and records your tab's audio. When the picker appears, choose <strong>This Tab</strong> and enable <strong>Share audio</strong>. Works best in Chrome/Edge on desktop.</span>
+    </div>
+  </div>
+</main>
+
+<script>
+(function(){
+  const input = document.getElementById('frenchInput');
+  const generateBtn = document.getElementById('generateBtn');
+  const voiceSelect = document.getElementById('voiceSelect');
+  const statusEl = document.getElementById('status');
+  const player = document.getElementById('player');
+  const transcriptEl = document.getElementById('transcript');
+  const playPauseBtn = document.getElementById('playPauseBtn');
+  const backBtn = document.getElementById('backBtn');
+  const fwdBtn = document.getElementById('fwdBtn');
+  const progressBar = document.getElementById('progressBar');
+  const progressFill = document.getElementById('progressFill');
+  const timeLabel = document.getElementById('timeLabel');
+  const rateSelect = document.getElementById('rateSelect');
+  const recordBtn = document.getElementById('recordBtn');
+
+  const WORD_RE = /[A-Za-zÀ-ÖØ-öø-ÿ]+(?:['’\-][A-Za-zÀ-ÖØ-öø-ÿ]+)*/g;
+
+  let words = [];
+  let frenchVoices = [];
+  let chosenVoice = null;
+  let currentWordIndex = -1;
+  let isPlaying = false;
+  let isRecording = false;
+  let rate = 1;
+
+  function setStatus(msg, isError){
+    statusEl.textContent = msg || '';
+    statusEl.className = isError ? 'error' : '';
+  }
+
+  // Rank installed French voices. Word-by-word highlighting depends on the
+  // browser firing 'boundary' events, and most browsers (Chrome/Edge) only
+  // fire those reliably for LOCAL/offline voices — network voices (Google's
+  // cloud voices etc.) often stay silent on boundary events entirely, which
+  // breaks sync. So: local voices are ranked first (sync must work), and
+  // naturalness keywords only break ties within that safe group. Network
+  // voices are still listed below, in case a given browser does support
+  // them, but they're flagged as possibly not syncing.
+  function voiceScore(v){
+    const n = v.name.toLowerCase();
+    let score = v.localService ? 10 : 0;
+    if (n.includes('natural')) score += 3;
+    if (n.includes('neural')) score += 3;
+    if (n.includes('online')) score += 1;
+    if (n.includes('google')) score += 1;
+    if (n.includes('compact')) score -= 2;
+    return score;
+  }
+
+  function populateVoices(){
+    const all = speechSynthesis.getVoices();
+    frenchVoices = all.filter(v => v.lang && v.lang.toLowerCase().startsWith('fr'));
+    frenchVoices.sort((a, b) => voiceScore(b) - voiceScore(a));
+    voiceSelect.innerHTML = '';
+    if (!frenchVoices.length){
+      const opt = document.createElement('option');
+      opt.textContent = 'No French voice found';
+      voiceSelect.appendChild(opt);
+      voiceSelect.disabled = true;
+      return;
+    }
+    frenchVoices.forEach((v, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = v.name + (v.lang ? ' (' + v.lang + ')' : '') + (v.localService ? '' : ' — may not highlight');
+      voiceSelect.appendChild(opt);
+    });
+    chosenVoice = frenchVoices[0];
+    voiceSelect.value = 0;
+  }
+  if ('speechSynthesis' in window){
+    populateVoices();
+    speechSynthesis.onvoiceschanged = populateVoices;
+  }
+  voiceSelect.addEventListener('change', () => {
+    chosenVoice = frenchVoices[parseInt(voiceSelect.value, 10)] || null;
+    if (isPlaying) speakFrom(Math.max(currentWordIndex, 0));
+  });
+
+  function buildTranscript(text){
+    transcriptEl.innerHTML = '';
+    words = [];
+    const paragraphs = text.split(/\n{1,}/).filter(p => p.trim().length);
+    let wIdx = 0;
+    paragraphs.forEach(paraText => {
+      const p = document.createElement('p');
+      let lastIndex = 0;
+      let m;
+      WORD_RE.lastIndex = 0;
+      while ((m = WORD_RE.exec(paraText)) !== null){
+        if (m.index > lastIndex){
+          p.appendChild(document.createTextNode(paraText.slice(lastIndex, m.index)));
+        }
+        const span = document.createElement('span');
+        span.className = 'word';
+        span.textContent = m[0];
+        span.dataset.index = wIdx;
+        span.tabIndex = 0;
+        p.appendChild(span);
+        words.push({ text: m[0], el: span });
+        wIdx++;
+        lastIndex = WORD_RE.lastIndex;
+      }
+      if (lastIndex < paraText.length){
+        p.appendChild(document.createTextNode(paraText.slice(lastIndex)));
+      }
+      transcriptEl.appendChild(p);
+    });
+  }
+
+  function buildSpeechSlice(fromIndex){
+    const slice = words.slice(fromIndex);
+    let text = '';
+    slice.forEach((w, i) => {
+      w.sliceStart = text.length;
+      text += w.text;
+      w.sliceEnd = text.length;
+      if (i < slice.length - 1) text += ' ';
+    });
+    return text;
+  }
+
+  function clearActive(){
+    if (currentWordIndex >= 0 && words[currentWordIndex]){
+      words[currentWordIndex].el.classList.remove('active');
+    }
+  }
+
+  function setActive(idx){
+    clearActive();
+    currentWordIndex = idx;
+    if (idx < 0 || idx >= words.length) return;
+    const el = words[idx].el;
+    el.classList.add('active');
+    const r = el.getBoundingClientRect();
+    const cr = transcriptEl.getBoundingClientRect();
+    if (r.top < cr.top || r.bottom > cr.bottom){
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+    updateProgress();
+  }
+
+  function updateProgress(){
+    const total = words.length || 1;
+    const pos = Math.max(currentWordIndex, 0) + 1;
+    progressFill.style.width = (pos / total * 100) + '%';
+    timeLabel.textContent = pos + ' / ' + total + ' mots';
+  }
+
+  // onFullEnd: optional callback fired only when playback reaches the true end
+  function speakFrom(startIndex, onFullEnd){
+    speechSynthesis.cancel();
+    if (startIndex >= words.length){
+      isPlaying = false;
+      playPauseBtn.textContent = '▶ Play';
+      if (onFullEnd) onFullEnd();
+      return;
+    }
+    const text = buildSpeechSlice(startIndex);
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'fr-FR';
+    if (chosenVoice) utter.voice = chosenVoice;
+    utter.rate = rate;
+
+    utter.onboundary = (e) => {
+      if (e.name && e.name !== 'word') return;
+      const charIdx = e.charIndex;
+      const slice = words.slice(startIndex);
+      let found = -1;
+      for (let i = 0; i < slice.length; i++){
+        if (charIdx >= slice[i].sliceStart && charIdx < slice[i].sliceEnd + 1){
+          found = startIndex + i;
+        }
+      }
+      if (found === -1) found = startIndex;
+      setActive(found);
+    };
+
+    utter.onend = () => {
+      if (isPlaying){
+        isPlaying = false;
+        playPauseBtn.textContent = '▶ Play';
+        setActive(words.length - 1);
+      }
+      if (onFullEnd) onFullEnd();
+    };
+    utter.onerror = () => {
+      setStatus('Playback error — try again.', true);
+      isPlaying = false;
+      playPauseBtn.textContent = '▶ Play';
+    };
+
+    speechSynthesis.speak(utter);
+    isPlaying = true;
+    playPauseBtn.textContent = '⏸ Pause';
+  }
+
+  function playPause(){
+    if (!words.length || isRecording) return;
+    if (isPlaying){
+      speechSynthesis.pause();
+      isPlaying = false;
+      playPauseBtn.textContent = '▶ Play';
+    } else if (speechSynthesis.paused){
+      speechSynthesis.resume();
+      isPlaying = true;
+      playPauseBtn.textContent = '⏸ Pause';
+    } else {
+      speakFrom(Math.max(currentWordIndex, 0));
+    }
+  }
+
+  function jumpWords(delta){
+    if (isRecording) return;
+    const target = Math.min(Math.max((currentWordIndex < 0 ? 0 : currentWordIndex) + delta, 0), words.length - 1);
+    setActive(target);
+    speakFrom(target);
+  }
+
+  generateBtn.addEventListener('click', () => {
+    const text = input.value.trim();
+    if (!text){
+      setStatus('Paste some French text first.', true);
+      return;
+    }
+    if (!('speechSynthesis' in window)){
+      setStatus('Your browser does not support speech synthesis.', true);
+      return;
+    }
+    speechSynthesis.cancel();
+    buildTranscript(text);
+    if (!words.length){
+      setStatus('No readable words found in that text.', true);
+      return;
+    }
+    currentWordIndex = -1;
+    isPlaying = false;
+    player.style.display = 'block';
+    playPauseBtn.disabled = false;
+    backBtn.disabled = false;
+    fwdBtn.disabled = false;
+    rateSelect.disabled = false;
+    recordBtn.disabled = false;
+    playPauseBtn.textContent = '▶ Play';
+    updateProgress();
+    setStatus('Ready — press Play.');
+  });
+
+  playPauseBtn.addEventListener('click', playPause);
+  backBtn.addEventListener('click', () => jumpWords(-5));
+  fwdBtn.addEventListener('click', () => jumpWords(5));
+
+  rateSelect.addEventListener('change', () => {
+    rate = parseFloat(rateSelect.value);
+    if (isPlaying) speakFrom(Math.max(currentWordIndex, 0));
+  });
+
+  progressBar.addEventListener('click', (e) => {
+    if (!words.length || isRecording) return;
+    const rect = progressBar.getBoundingClientRect();
+    const frac = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
+    const target = Math.min(Math.floor(frac * words.length), words.length - 1);
+    setActive(target);
+    speakFrom(target);
+  });
+
+  transcriptEl.addEventListener('click', (e) => {
+    if (isRecording) return;
+    const t = e.target.closest('.word');
+    if (!t) return;
+    const idx = parseInt(t.dataset.index, 10);
+    setActive(idx);
+    speakFrom(idx);
+  });
+  transcriptEl.addEventListener('keydown', (e) => {
+    if (isRecording) return;
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('word')){
+      e.preventDefault();
+      const idx = parseInt(e.target.dataset.index, 10);
+      setActive(idx);
+      speakFrom(idx);
+    }
+  });
+
+  // Experimental: capture this tab's own audio output while replaying the
+  // text from the start, then offer the recording as a download.
+  recordBtn.addEventListener('click', async () => {
+    if (!words.length || isRecording) return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia){
+      setStatus('Recording is not supported in this browser.', true);
+      return;
+    }
+    let displayStream;
+    try{
+      setStatus('In the picker, choose "This Tab" and enable "Share audio".');
+      displayStream = await navigator.mediaDevices.getDisplayMedia({ video:true, audio:true });
+    } catch(err){
+      setStatus('Recording cancelled.', true);
+      return;
+    }
+    const audioTracks = displayStream.getAudioTracks();
+    if (!audioTracks.length){
+      setStatus('No audio captured — make sure "Share audio" was enabled, then try again.', true);
+      displayStream.getTracks().forEach(t => t.stop());
+      return;
+    }
+
+    const audioStream = new MediaStream(audioTracks);
+    let recorder;
+    try{
+      recorder = new MediaRecorder(audioStream);
+    } catch(err){
+      setStatus('This browser cannot record audio this way.', true);
+      displayStream.getTracks().forEach(t => t.stop());
+      return;
+    }
+    const chunks = [];
+    recorder.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+    recorder.onstop = () => {
+      displayStream.getTracks().forEach(t => t.stop());
+      isRecording = false;
+      recordBtn.disabled = false;
+      playPauseBtn.disabled = false;
+      backBtn.disabled = false;
+      fwdBtn.disabled = false;
+      if (!chunks.length){
+        setStatus('No audio was captured. Try again and make sure to tick "Share audio".', true);
+        return;
+      }
+      const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'shadowing-audio.webm';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      setStatus('Recording downloaded.');
+    };
+
+    isRecording = true;
+    recordBtn.disabled = true;
+    playPauseBtn.disabled = true;
+    backBtn.disabled = true;
+    fwdBtn.disabled = true;
+    setStatus('Recording… playing the full text from the start.');
+    recorder.start();
+    setActive(-1);
+    speakFrom(0, () => { if (recorder.state !== 'inactive') recorder.stop(); });
+  });
+
+  window.addEventListener('beforeunload', () => {
+    if ('speechSynthesis' in window) speechSynthesis.cancel();
+  });
+})();
+</script>
+</body>
+</html>
